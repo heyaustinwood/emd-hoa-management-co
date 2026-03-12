@@ -1,19 +1,317 @@
-# EMD HOA Management SEO Network
-## Infrastructure & Technical SEO Playbook
+# HOA Management EMD Programmatic SEO Network
+## Full Technical Playbook + Build Specification
 
-Author: System Architecture Document
-Purpose: Infrastructure required to deploy a scalable network of EMD (Exact Match Domain) lead generation sites targeting HOA management queries.
+Purpose:
+Build a scalable network of Exact Match Domain (EMD) lead generation sites targeting HOA management queries across U.S. cities using a single Flask backend.
+
+Primary keyword model:
+
+hoa management company {city}
+hoa management companies {city}
+hoa property management {city}
+
+Example:
+
+hoamanagementcophoenix.com
+hoamanagementcomesa.com
+hoamanagementcochandler.com
 
 Sources:
-Google Search Documentation
+Google Search documentation
 https://developers.google.com/search/docs
 
-Bing Webmaster Documentation
+Bing Webmaster documentation
 https://learn.microsoft.com/en-us/bingwebmaster/
+
+Sitemap protocol
+https://www.sitemaps.org/protocol.html
+
+Schema structured data
+https://schema.org
 
 ---
 
-# 1. robots.txt
+# 1. System Overview
+
+The system deploys many domains with one backend application.
+
+Each domain represents a localized SEO landing site targeting HOA management queries in a specific city.
+
+Example:
+
+hoamanagementcophoenix.com
+hoamanagementcomesa.com
+hoamanagementcoscottsdale.com
+
+All domains resolve to the same server.
+
+Routing logic determines which city site to render.
+
+Architecture:
+
+Internet
+│
+Cloudflare DNS
+│
+Flask Application
+│
+Domain Resolver Middleware
+│
+City Site Configuration
+│
+Template Rendering
+
+---
+
+# 2. Technology Stack
+
+Backend
+
+Python
+Flask
+Gunicorn
+
+Frontend
+
+Jinja2 templates
+Minimal CSS
+Minimal JavaScript
+
+Infrastructure
+
+DigitalOcean / VPS
+Cloudflare DNS
+PostgreSQL or SQLite
+
+SEO Systems
+
+Google Search Console
+Bing Webmaster Tools
+Google Indexing API
+Bing URL Submission API
+
+---
+
+# 3. Domain Strategy
+
+Each city receives a dedicated EMD domain.
+
+Naming convention:
+
+hoamanagementco{city}.com
+
+Examples:
+
+hoamanagementcophoenix.com
+hoamanagementcomesa.com
+hoamanagementcochandler.com
+hoamanagementcoscottsdale.com
+
+Cloudflare DNS configuration:
+
+Type: A
+Name: @
+IP: SERVER_IP
+
+Optional:
+
+www CNAME → @
+
+---
+
+# 4. Database Schema
+
+Table: sites
+
+id
+domain
+city
+state
+primary_keyword
+meta_title
+meta_description
+phone
+email
+created_at
+active
+
+Example record:
+
+domain: hoamanagementcophoenix.com
+city: Phoenix
+state: AZ
+primary_keyword: HOA Management Company Phoenix
+
+---
+
+Table: leads
+
+id
+site_id
+name
+email
+phone
+hoa_name
+units
+message
+created_at
+ip
+utm_source
+utm_campaign
+
+---
+
+Table: conversions
+
+id
+site_id
+lead_id
+conversion_time
+page
+
+---
+
+# 5. Flask Application Structure
+
+hoa_seo_network
+│
+├── app.py
+├── models.py
+├── create_site.py
+├── requirements.txt
+│
+├── templates
+│   ├── layout.html
+│   ├── home.html
+│   ├── services.html
+│   ├── quote.html
+│   └── success.html
+│
+├── static
+│   ├── css
+│   ├── js
+│   └── images
+│
+└── utils
+    ├── domain_resolver.py
+    ├── sitemap.py
+    └── robots.py
+
+---
+
+# 6. Domain Routing Middleware
+
+Example logic:
+
+from flask import request, abort
+from models import Site
+
+def get_site():
+    domain = request.host.lower()
+    site = Site.query.filter_by(domain=domain).first()
+
+    if not site:
+        abort(404)
+
+    return site
+
+---
+
+# 7. URL Structure
+
+/
+/services/<keyword>-<city>
+/quote
+/success
+
+Example:
+
+hoamanagementcophoenix.com/
+hoamanagementcophoenix.com/services/hoa-management-phoenix
+hoamanagementcophoenix.com/services/hoa-management-company-phoenix
+hoamanagementcophoenix.com/quote
+hoamanagementcophoenix.com/success
+
+---
+
+# 8. Homepage Template
+
+Example title:
+
+HOA Management Company Phoenix | HOA Property Management
+
+Example content:
+
+<h1>{{ site.primary_keyword }}</h1>
+
+If you are searching for a professional HOA management company in {{ site.city }}, our team provides full service association management for homeowners associations and condominium communities.
+
+---
+
+# 9. Services Pages
+
+/services/hoa-management-phoenix
+/services/hoa-management-company-phoenix
+/services/hoa-property-management-phoenix
+
+Sections:
+
+Financial management
+Board meeting support
+Vendor management
+Maintenance coordination
+Reserve planning
+Insurance claim support
+
+---
+
+# 10. Quote Page
+
+Fields:
+
+Name
+Email
+Phone
+Community Name
+Number of Units
+Message
+
+POST endpoint:
+
+/api/lead
+
+Example:
+
+@app.route("/api/lead", methods=["POST"])
+def lead():
+    site = get_site()
+
+    lead = Lead(
+        site_id = site.id,
+        name = request.form["name"],
+        email = request.form["email"],
+        phone = request.form["phone"],
+        message = request.form["message"]
+    )
+
+    db.session.add(lead)
+    db.session.commit()
+
+    return redirect("/success")
+
+---
+
+# 11. Success Page
+
+Purpose:
+
+conversion tracking
+analytics events
+pixel tracking
+
+---
+
+# 12. robots.txt
 
 Endpoint:
 
@@ -26,25 +324,9 @@ Allow: /
 
 Sitemap: https://domain.com/sitemap.xml
 
-Flask example:
-
-@app.route("/robots.txt")
-def robots():
-    site = get_site()
-    robots = f\"\"\"
-User-agent: *
-Allow: /
-
-Sitemap: https://{site.domain}/sitemap.xml
-\"\"\"
-    return Response(robots, mimetype="text/plain")
-
-Documentation:
-https://developers.google.com/search/docs/crawling-indexing/robots/create-robots-txt
-
 ---
 
-# 2. XML Sitemap
+# 13. XML Sitemap
 
 Endpoint:
 
@@ -58,126 +340,9 @@ Example pages:
 /services/hoa-property-management-phoenix
 /quote
 
-Example generator logic:
-
-@app.route("/sitemap.xml")
-def sitemap():
-
-    site = get_site()
-
-    pages = [
-        "",
-        "quote",
-        f"services/hoa-management-{site.city.lower()}",
-        f"services/hoa-management-company-{site.city.lower()}",
-        f"services/hoa-property-management-{site.city.lower()}"
-    ]
-
-    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-
-    for page in pages:
-        xml.append("<url>")
-        xml.append(f"<loc>https://{site.domain}/{page}</loc>")
-        xml.append("</url>")
-
-    xml.append("</urlset>")
-
-Sitemap protocol:
-https://www.sitemaps.org/protocol.html
-
 ---
 
-# 3. Google Search Console Setup
-
-Verification method recommended:
-
-DNS TXT Record
-
-Example Cloudflare record:
-
-Type: TXT
-Name: @
-Value: google-site-verification=XXXXX
-
-After verification submit sitemap:
-
-https://domain.com/sitemap.xml
-
-Documentation:
-https://support.google.com/webmasters/answer/9008080
-
----
-
-# 4. Bing Webmaster Tools
-
-Verification options:
-
-DNS TXT
-XML verification file
-Meta tag
-
-Recommended:
-
-DNS TXT
-
-Submit sitemap:
-
-https://domain.com/sitemap.xml
-
-Documentation:
-https://learn.microsoft.com/en-us/bingwebmaster/getting-started/verification
-
----
-
-# 5. Indexing Acceleration
-
-## Google Indexing API
-
-Endpoint:
-
-https://indexing.googleapis.com/v3/urlNotifications:publish
-
-Payload example:
-
-{
-"url": "https://domain.com/",
-"type": "URL_UPDATED"
-}
-
-Documentation:
-https://developers.google.com/search/apis/indexing-api
-
----
-
-## Bing URL Submission API
-
-Endpoint:
-
-https://ssl.bing.com/webmaster/api.svc/json/SubmitUrlbatch
-
-Example payload:
-
-{
-"siteUrl":"https://domain.com",
-"urlList":[
-"https://domain.com/",
-"https://domain.com/services/hoa-management-phoenix"
-]
-}
-
-Documentation:
-https://learn.microsoft.com/en-us/bingwebmaster/url-submission-api/
-
----
-
-# 6. Canonical Tags
-
-Add to every page:
-
-<link rel="canonical" href="https://domain/current-page">
-
-Flask / Jinja example:
+# 14. Canonical Tags
 
 <link rel="canonical" href="https://{{ site.domain }}{{ request.path }}">
 
@@ -186,23 +351,15 @@ https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicat
 
 ---
 
-# 7. Structured Data
-
-Recommended schema types:
-
-ProfessionalService
-LocalBusiness
-Organization
-
-Example:
+# 15. Structured Data
 
 {
-"@context": "https://schema.org",
-"@type": "ProfessionalService",
-"name": "HOA Management Company Phoenix",
-"areaServed": "Phoenix AZ",
-"serviceType": "HOA Management",
-"url": "https://domain.com"
+ "@context": "https://schema.org",
+ "@type": "ProfessionalService",
+ "name": "HOA Management Company Phoenix",
+ "areaServed": "Phoenix AZ",
+ "serviceType": "HOA Management",
+ "url": "https://domain.com"
 }
 
 Documentation:
@@ -210,16 +367,9 @@ https://schema.org/ProfessionalService
 
 ---
 
-# 8. Local SEO Signals
+# 16. Local SEO Signals
 
-Pages must include geographic references:
-
-City
-County
-Neighborhoods
-Local areas
-
-Example for Phoenix:
+Include geographic references:
 
 Maricopa County
 East Valley
@@ -227,12 +377,9 @@ Arcadia
 Ahwatukee
 Desert Ridge
 
-Documentation:
-https://developers.google.com/search/docs/fundamentals/local-search
-
 ---
 
-# 9. Page Speed Targets
+# 17. Page Speed Targets
 
 Largest Contentful Paint < 2.5s
 CLS < 0.1
@@ -240,20 +387,17 @@ TTFB < 800ms
 
 Tools:
 
+Google Lighthouse
 PageSpeed Insights
-Lighthouse
 
-Documentation:
 https://web.dev/vitals/
 
 ---
 
-# 10. Internal Link Graph
+# 18. Internal Linking
 
 HOME
- ├── services/hoa-management-city
- ├── services/hoa-management-company-city
- ├── services/hoa-property-management-city
+ ├── services pages
  └── quote
 
 Service pages link to:
@@ -261,135 +405,155 @@ Service pages link to:
 home
 quote
 
-Documentation:
-https://developers.google.com/search/docs/crawling-indexing/links-crawlable
-
 ---
 
-# 11. Open Graph Tags
+# 19. Image SEO
 
-Required:
-
-og:title
-og:description
-og:url
-og:image
-
----
-
-# 12. Image SEO
-
-Use:
-
-alt tags
-city keyword filenames
+Use alt attributes and city-based filenames.
 
 Example:
 
 hoa-management-phoenix.jpg
 
-Documentation:
-https://developers.google.com/search/docs/appearance/google-images
-
 ---
 
-# 13. NAP Consistency
+# 20. NAP Consistency
 
-Signals:
+Example:
 
-company name
-address
-phone number
+Heywood HOA Management
+Phoenix AZ
+480-XXX-XXXX
 
-Formatting must remain consistent across pages.
-
-Documentation:
 https://support.google.com/business/answer/3038177
 
 ---
 
-# 14. Additional Keyword Pages
+# 21. Google Search Console
 
-Recommended expansion:
+Verify domain via DNS TXT.
 
-/hoa-management-cost-city
-/hoa-management-services-city
-/hoa-property-management-city
-/hoa-management-companies-city
+Submit sitemap:
 
-Captures long tail keywords.
+https://domain.com/sitemap.xml
 
----
-
-# 15. Crawl Budget Strategy
-
-If deploying hundreds of domains:
-
-separate sitemap per domain
-fast server response
-small site structure
-
-Documentation:
-https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget
+https://support.google.com/webmasters/answer/9008080
 
 ---
 
-# 16. Technical SEO Checklist
+# 22. Bing Webmaster Tools
 
-robots.txt
-sitemap.xml
-canonical tags
-structured data
-internal links
-fast load speed
-meta titles
-meta descriptions
-image alt text
+Verification:
+
+DNS TXT
+XML file
+Meta tag
+
+Submit sitemap.
+
+https://learn.microsoft.com/en-us/bingwebmaster/
 
 ---
 
-# 17. Backlink Seeding
+# 23. Indexing APIs
 
-Examples:
+Google:
 
-industry directories
-local directories
+https://indexing.googleapis.com/v3/urlNotifications:publish
+
+Payload:
+
+{
+"url": "https://domain.com/",
+"type": "URL_UPDATED"
+}
+
+Bing:
+
+https://ssl.bing.com/webmaster/api.svc/json/SubmitUrlbatch
+
+---
+
+# 24. Backlink Seeding
+
+Initial backlinks from:
+
+business directories
+local citations
 press releases
-citation sites
+industry directories
 
-Documentation:
 https://developers.google.com/search/docs/fundamentals/seo-starter-guide
 
 ---
 
-# 18. Automation Scripts Needed
+# 25. Automation Scripts
 
-domain provisioning
-cloudflare dns automation
-google search console verification
-bing verification
-sitemap submission
-indexing api submission
+Automation tasks:
 
----
+register domain
+create cloudflare dns record
+insert site record
+submit sitemap
+submit indexing api
 
-# 19. City Content Blocks
+Example CLI:
 
-Store in database to prevent duplicate content.
-
-Example:
-
-city_intro
-city_neighborhoods
-city_hoa_density
+python create_site.py --city "Phoenix" --state "AZ" --domain hoamanagementcophoenix.com
 
 ---
 
-# 20. Admin Dashboard Requirements
+# 26. Admin Dashboard
 
-create new site
+create site
 manage domains
 view leads
 export leads
 trigger indexing
 manage content
+
+---
+
+# 27. Future SEO Pages
+
+/hoa-management-cost-{city}
+/hoa-management-services-{city}
+/hoa-management-companies-{city}
+/hoa-board-responsibilities-{city}
+/hoa-reserve-study-{city}
+
+---
+
+# 28. Scaling Strategy
+
+Initial:
+
+Top 100 cities
+
+Future:
+
+Top 500 cities
+
+Domains:
+
+500+
+
+All served by one backend.
+
+---
+
+# 29. Expected Outcome
+
+System deploys hundreds of city-specific HOA management lead generation sites.
+
+Each domain acts as:
+
+local SEO landing page
+lead capture site
+location authority signal
+
+Infrastructure controlled by:
+
+single Flask backend
+single database
+single deployment
